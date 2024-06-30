@@ -1,4 +1,4 @@
-<?PHP
+<?php
 // src/Controller/PaymentController.php
 namespace App\Controller;
 
@@ -23,6 +23,10 @@ class PaymentController extends AbstractController
     public function example(string $gateway, Request $request): JsonResponse
     {
         $paymentData = json_decode($request->getContent(), true);
+
+        if ($paymentData === null) {
+            return new JsonResponse(['error' => 'Invalid JSON'], 400);
+        }
 
         try {
             $response = $this->paymentGatewayService->processPayment($gateway, $paymentData);

@@ -18,16 +18,12 @@ class PaymentGatewayService
 
     public function processPayment(string $gateway, array $paymentData): array
     {
-        $this->logger->info('Processing payment', ['gateway' => $gateway, 'data' => $paymentData]);
-
-        switch ($gateway) {
-            case 'aci':
-                return $this->processAciPayment($paymentData);
-            case 'shift4':
-                return $this->processShift4Payment($paymentData);
-            default:
-                $this->logger->error('Unsupported payment gateway', ['gateway' => $gateway]);
-                throw new \InvalidArgumentException('Unsupported payment gateway');
+        if ($gateway === 'shift4') {
+            return $this->processShift4Payment($paymentData);
+        } elseif ($gateway === 'aci') {
+            return $this->processAciPayment($paymentData);
+        } else {
+            throw new \InvalidArgumentException('Unsupported payment gateway');
         }
     }
 
@@ -35,7 +31,6 @@ class PaymentGatewayService
     {
         $this->logger->info('Processing ACI payment', ['data' => $paymentData]);
 
-        // Dummy implementation for ACI
         try {
             $response = $this->client->request('POST', 'https://api.aci.com/charges', [
                 'json' => $paymentData,
@@ -48,7 +43,6 @@ class PaymentGatewayService
         }
     }
 
-
     private function processShift4Payment(array $paymentData): array
     {
         $this->logger->info('Processing Shift4 payment', ['data' => $paymentData]);
@@ -56,19 +50,18 @@ class PaymentGatewayService
         $username = $_ENV['SHIFT4_API_USERNAME'];
         $password = $_ENV['SHIFT4_API_PASSWORD'];
 
-        // Prepare the request payload
         $requestPayload = [
-            'amount' => $paymentData['amount'], // assuming it's in smallest currency unit (e.g., cents)
+            'amount' => $paymentData['amount'],
             'currency' => $paymentData['currency'],
-            'source' => [
+            'card' => [
                 'number' => $paymentData['card_number'],
-                'exp_month' => $paymentData['card_exp_month'],
-                'exp_year' => $paymentData['card_exp_year'],
+                'expMonth' => $paymentData['exp_month'],
+                'expYear' => $paymentData['exp_year'],
                 'cvc' => $paymentData['card_cvv'],
-            ],
-            'capture' => true,
-            'description' => 'Test payment',
+            ]
         ];
+
+        $this->logger->info('Shift4 request payload', ['payload' => $requestPayload]);
 
         try {
             $response = $this->client->request('POST', 'https://api.shift4.com/charges', [
@@ -94,6 +87,5 @@ class PaymentGatewayService
 
             throw $e;
         }
-    }
-
+    }   
 }

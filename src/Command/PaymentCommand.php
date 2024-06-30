@@ -24,7 +24,7 @@ class PaymentCommand extends Command
         $this->logger = $logger;
     }
 
-    protected function configure()
+    protected function configure(): void
     {
         $this
             ->setDescription('Process a payment through a specified gateway.')
@@ -37,7 +37,7 @@ class PaymentCommand extends Command
             ->addOption('card_cvv', null, InputOption::VALUE_REQUIRED, 'The card CVV.');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $gateway = $input->getArgument('gateway');
         $paymentData = [
@@ -49,7 +49,12 @@ class PaymentCommand extends Command
             'card_cvv' => $input->getOption('card_cvv'),
         ];
 
-        $this->logger->info('Executing payment command', ['gateway' => $gateway, 'data' => $paymentData]);
+        $this->logger->info('Executing payment command', [
+            'gateway' => $gateway, 
+            'data' => $paymentData,
+            'env_username' => $_ENV['SHIFT4_API_USERNAME'],
+            'env_password' => $_ENV['SHIFT4_API_PASSWORD']
+        ]);
 
         try {
             $response = $this->paymentGatewayService->processPayment($gateway, $paymentData);
