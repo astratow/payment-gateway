@@ -54,24 +54,26 @@ class PaymentGatewayService
             'amount' => $paymentData['amount'],
             'currency' => $paymentData['currency'],
             'card' => [
-                'number' => $paymentData['card_number'],
-                'expMonth' => $paymentData['exp_month'],
-                'expYear' => $paymentData['exp_year'],
-                'cvc' => $paymentData['card_cvv'],
+                'first6' => substr($paymentData['card_number'], 0, 6),
+                'last4' => substr($paymentData['card_number'], -4),
+                'expMonth' => $paymentData['card_exp_month'],
+                'expYear' => $paymentData['card_exp_year'],
+                'cvv' => $paymentData['card_cvv'],
             ]
         ];
 
+        $this->logger->info('Shift4 request URL', ['url' => 'https://api.shift4.com/charges']);
         $this->logger->info('Shift4 request payload', ['payload' => $requestPayload]);
-
+        
         try {
             $response = $this->client->request('POST', 'https://api.shift4.com/charges', [
                 'json' => $requestPayload,
                 'auth_basic' => [$username, $password ?: ''],
             ]);
-
+        
             $responseData = $response->toArray();
             $this->logger->info('Shift4 response', ['response' => $responseData]);
-
+        
             return $responseData;
         } catch (\Exception $e) {
             if ($e instanceof \Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface) {
@@ -84,7 +86,7 @@ class PaymentGatewayService
             } else {
                 $this->logger->error('Error processing Shift4 payment', ['exception' => $e->getMessage()]);
             }
-
+        
             throw $e;
         }
     }   
